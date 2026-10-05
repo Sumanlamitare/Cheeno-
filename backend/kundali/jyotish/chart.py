@@ -9,9 +9,7 @@ from ..astro import ephemeris as eph
 from ..config import CalculationSettings
 from . import vargas
 from .constants import (
-    NAKSHATRA_SPAN,
     NAKSHATRAS,
-    PADA_SPAN,
     PLANET_INFO,
     PLANETS,
     RASHI_LORDS,
@@ -25,8 +23,11 @@ from .drishti import aspect_type
 
 
 def nakshatra_of(lon: float) -> tuple[int, int]:
-    idx = int(lon // NAKSHATRA_SPAN) % 27
-    pada = int((lon % NAKSHATRA_SPAN) // PADA_SPAN) + 1
+    # Work in arc-seconds rounded to 1e-6" so exact boundaries (e.g. 120°) are
+    # not misplaced by binary floating point. 13°20' = 48000", 3°20' = 12000".
+    arcsec = round((lon % 360.0) * 3600.0, 6)
+    idx = int(arcsec // 48000) % 27
+    pada = int((arcsec % 48000) // 12000) + 1
     return idx, min(pada, 4)
 
 

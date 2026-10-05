@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
@@ -26,12 +27,20 @@ from kundali.rules.nakshatra import nakshatra_catalogue
 
 log = logging.getLogger("kundali")
 
+
+@asynccontextmanager
+async def lifespan(_app):
+    get_index()  # load the offline place index once at startup
+    yield
+
+
 app = FastAPI(
     title="Janma Kundali API",
     description="Deterministic Vedic (Jyotish) birth chart calculation and rule-based interpretation.",
     version="1.0.0",
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 origins = [o for o in os.environ.get("CORS_ORIGINS", "").split(",") if o]
@@ -68,11 +77,6 @@ class KundaliRequest(BaseModel):
 class DateRequest(BaseModel):
     calendar: str = Field(..., pattern="^(AD|BS)$")
     date: str = Field(..., max_length=12)
-
-
-@app.on_event("startup")
-def warm() -> None:
-    get_index()  # load the offline place index once
 
 
 @app.get("/api/health")
