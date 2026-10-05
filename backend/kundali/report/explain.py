@@ -11,6 +11,9 @@ import datetime as dt
 import re
 
 from ..jyotish.constants import ordinal
+from ..rules.data.meaning import (AREA_LORD_HOUSE, HOUSE_LIFE, LAGNA_YOU, LORD_YOU, PERIOD_HOUSE_YOU,
+                                  PLANET_ENERGY, PLANET_YOU, THEME_YOU, TONE_ADVICE)
+from ..jyotish.constants import RASHIS
 
 HOUSE_PLAIN = {
     1: "self and body", 2: "money, family and speech", 3: "courage, effort and siblings",
@@ -125,6 +128,46 @@ def _pick(matches: list[dict], polarity: str, n: int) -> list[dict]:
     return out
 
 
+def _verdict(balance: float | None) -> str:
+    if balance is None:
+        return "Your chart has no strong indications either way here."
+    if balance >= 0.75:
+        return "This is one of the stronger areas of your life."
+    if balance >= 0.55:
+        return "This area works well for you overall, with a few things to manage."
+    if balance >= 0.45:
+        return "This area is mixed for you: results depend on your effort and timing."
+    return "This area asks more of you. Expect to work harder here, and it pays off when you do."
+
+
+def _personal(r: dict, key: str, chart: dict) -> tuple[list[dict], list[str]]:
+    """What the area means for you (second person) and what you can do."""
+    meaning, advice = [], []
+    lord_house_num = AREA_LORD_HOUSE.get(key)
+    if lord_house_num:
+        lord = chart["houses"][lord_house_num - 1]["lord"]
+        lp = next(p for p in chart["planets"] if p["name"] == lord)
+        meaning.append({"text": LORD_YOU[key][lp["house"]],
+                        "why": [f"The ruler of your {ordinal(lord_house_num)} house ({lord}) sits in your "
+                                f"{ordinal(lp['house'])} house."]})
+    groups = sorted(r["strengths"] + r["challenges"] + r["notes"], key=lambda g: -g["weight"])
+    seen = set()
+    for g in groups:
+        entry = THEME_YOU.get(g["theme"], {}).get(g["polarity"])
+        if not entry or g["theme"] in seen:
+            continue
+        # Skip themes led by the lord placement already explained above.
+        if lord_house_num and re.search(rf"(^|_)L{lord_house_num}_in_\d+$", g["ruleIds"][0]):
+            continue
+        seen.add(g["theme"])
+        meaning.append({"text": entry[0], "why": g["why"][:3], "tone": g["polarity"]})
+        if entry[1] not in advice:
+            advice.append(entry[1])
+        if len(meaning) >= 5:
+            break
+    return meaning, advice[:4]
+
+
 def _fmt(iso: str) -> str:
     return dt.datetime.fromisoformat(iso).strftime("%b %Y")
 
@@ -154,6 +197,7 @@ def explain(report: dict) -> dict:
         {"title": "How you come across (your Lagna)",
          "text": (f"Your rising sign is {lagna}, so your outer personality is traditionally {SIGN_FLAVOUR[lagna]}. "
                   f"{i['lagna']['signProfile']['temperament']} {i['lagna']['signProfile']['behaviour']}"),
+         "forYou": LAGNA_YOU[RASHIS.index(lagna)],
          "why": [f"{lagna} was rising in the east at your birth time ({s['lagnaDegree']})."]},
         {"title": "Where your life energy goes",
          "text": (f"The ruler of your Lagna is {lf['lagnaLord']}, and it sits in your {ordinal(lord_house)} house, the "
@@ -183,8 +227,13 @@ def explain(report: dict) -> dict:
             extra.append("It is retrograde, so its themes tend to be revisited and mature with time.")
         if p["combust"]:
             extra.append("It is very close to the Sun (combust), so its qualities may need conscious effort to shine.")
+        you_tbl = PLANET_YOU[n]
+        for_you = you_tbl.get(word) or you_tbl["steady"]
+        for_you += (f" In your chart this plays out mainly through {HOUSE_LIFE[p['house']]}: that is where "
+                    f"{PLANET_ENERGY[n]} gets directed.")
         grahas.append({
             "planet": n,
+            "forYou": for_you,
             "headline": f"{n} in {p['signName']}, {ordinal(p['house'])} house: {word}",
             "strength": word,
             "text": (f"{n} stands for {PLANET_PLAIN[n]}. In your chart it sits in the {ordinal(p['house'])} house "
@@ -218,9 +267,14 @@ def explain(report: dict) -> dict:
             fields = [f for d in th["dominantPlanets"][:2] for f in d["fields"][:3]]
             extra = ("Fields traditionally linked to your chart: " + ", ".join(fields) +
                      ". These are tendencies, not a guaranteed profession.")
+        meaning, advice = _personal(r, key, chart)
         areas.append({
             "key": key,
             "title": title,
+            "verdict": _verdict(r["balance"]),
+            "meaning": meaning,
+            "advice": advice,
+            "balance": r["balance"],
             "summary": _balance_phrase(r["balance"]),
             "houses": house_line,
             "points": points,
@@ -240,7 +294,42 @@ def explain(report: dict) -> dict:
                 f"{_fmt(md['end'])}" + (f", and within it the {ad['lord']} Antardasha (sub-period) until "
                                         f"{_fmt(ad['end'])}." if ad else "."))
         cd = i.get("currentDasha") or {}
+        for_you = []
+        for lvl in (md, ad):
+            if not lvl:
+                continue
+            lord = lvl["lord"]
+            owned = [h["house"] for h in chart["houses"] if h["lord"] == lord]
+            lp = next(p for p in chart["planets"] if p["name"] == lord)
+            focus = [PERIOD_HOUSE_YOU[lp["house"]]] + [PERIOD_HOUSE_YOU[h] for h in owned if h != lp["house"]]
+            focus = [focus[0]] + [f.replace("a focus on ", "") for f in focus[1:3]]
+            label = "major period" if lvl is md else "current sub-period"
+            joined = focus[0] if len(focus) == 1 else ", ".join(focus[:-1]) + ", and also " + focus[-1]
+            for_you.append(f"Your {lord} {label} ({_fmt(lvl['start'])} to {_fmt(lvl['end'])}) brings {joined}.")
+        tone = acts[1]["tone"] if len(acts) > 1 else (acts[0]["tone"] if acts else "mixed")
+        for_you.append(TONE_ADVICE.get(tone, TONE_ADVICE["mixed"]))
+        upcoming = []
+        md_full = next((p for p in report["dasha"]["periods"] if p["status"] == "current"), None)
+        if md_full:
+            subs = md_full.get("children", [])
+            idx = next((k for k, x in enumerate(subs) if x["status"] == "current"), None)
+            if idx is not None and idx + 1 < len(subs):
+                nxt = subs[idx + 1]
+                upcoming.append(f"From {_fmt(nxt['start'])}: {md_full['lord']}–{nxt['lord']} sub-period begins.")
+            mdi = report["dasha"]["periods"].index(md_full)
+            if mdi + 1 < len(report["dasha"]["periods"]):
+                nmd = report["dasha"]["periods"][mdi + 1]
+                upcoming.append(f"From {_fmt(nmd['start'])}: your {nmd['lord']} major period begins, a new chapter "
+                                f"lasting about {round(nmd['durationYears'])} years.")
+        nxt_ss = next((c for c in report["sadesati"]["cycles"] if c["status"] == "upcoming"), None)
+        if report["sadesati"]["active"]:
+            cyc = report["sadesati"]["currentCycle"]
+            upcoming.append(f"Sade Sati is running until {_fmt(cyc['end'])}.")
+        elif nxt_ss:
+            upcoming.append(f"Your next Sade Sati begins around {_fmt(nxt_ss['start'])}.")
         period = {
+            "forYou": for_you,
+            "upcoming": upcoming,
             "text": text,
             "themes": [a["theme"] for a in acts[:2]],
             "activation": [a["activation"] for a in acts[:2]],
@@ -257,8 +346,27 @@ def explain(report: dict) -> dict:
     doshas = [{"name": d["name"], "status": d["status"], "text": d["text"]}
               for d in i["doshas"] if d["detected"]]
 
+    ranked = sorted((a for a in areas if a["balance"] is not None), key=lambda a: -a["balance"])
+    strong = [a["title"].lower() for a in ranked if a["balance"] >= 0.6][:3]
+    effort = [a["title"].lower() for a in reversed(ranked) if a["balance"] < 0.5][:2]
+    glance = [LAGNA_YOU[RASHIS.index(lagna)]]
+    glance.append(f"Your life energy naturally flows towards {HOUSE_LIFE[lord_house]}.")
+    if strong:
+        glance.append("Your strongest areas: " + "; ".join(strong) + ".")
+    if effort:
+        glance.append("Areas where effort pays off most: " + "; ".join(effort) + ".")
+    best = next((g for g in grahas if g["strength"] == "strong"), None)
+    weak = next((g for g in grahas if g["strength"] == "needs support"), None)
+    if best:
+        glance.append(f"Your strongest graha is {best['planet']}: {PLANET_YOU[best['planet']]['strong'].split('. ')[0]}.")
+    if weak:
+        glance.append(f"{weak['planet']} needs support: {PLANET_YOU[weak['planet']]['needs support'].split('. ')[0]}.")
+    if period:
+        glance.append(period["forYou"][0])
+
     return {
         "forName": name,
+        "glance": glance,
         "intro": intro,
         "core": core,
         "grahas": grahas,

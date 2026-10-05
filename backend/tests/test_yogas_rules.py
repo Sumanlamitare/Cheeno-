@@ -80,6 +80,18 @@ def test_dosha_rules(i):
     assert d["gandamula"]["detected"] == (c.planets["Moon"].nakshatra in {0, 8, 9, 17, 18, 26})
 
 
+def test_meaning_tables_complete():
+    from kundali.rules.data.meaning import LORD_YOU, PLANET_YOU, THEME_YOU
+    for area, table in LORD_YOU.items():
+        assert set(table) == set(range(1, 13)), area
+    for rules in ALL_RULE_MODULES[:8]:
+        for r in rules:
+            if r.polarity in ("positive", "negative", "mixed"):
+                assert r.polarity in THEME_YOU.get(r.theme, {}), (r.theme, r.polarity)
+    for p, t in PLANET_YOU.items():
+        assert "steady" in t
+
+
 def test_rule_tables_complete():
     for h in range(1, 13):
         assert set(BHAVESHA[h]) == set(range(1, 13))

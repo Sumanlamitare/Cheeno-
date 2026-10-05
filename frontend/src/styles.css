@@ -373,6 +373,12 @@ button.secondary { background: transparent; color: var(--maroon); }
 .site-footer .muted { color: #a2968a; }
 
 /* Explained */
+.ex-glance { background: var(--maroon); color: #fbf1dc; border-radius: var(--radius); padding: 16px 18px; margin-bottom: 8px; }
+.ex-glance .eyebrow { color: var(--gold-soft); }
+.ex-glance ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 1.05rem; }
+.ex-you { font-size: 1.02rem; color: var(--charcoal); background: rgba(168, 132, 58, 0.1); border-radius: 6px; padding: 8px 10px; }
+.ex-sub { margin: 10px 0 6px; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--gold); }
+.ex-advice { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 4px; }
 .ex-intro { background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--gold); border-radius: var(--radius); padding: 14px 16px; font-size: 1.04rem; }
 .ex-intro p:last-child { margin: 0; }
 .ex-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }

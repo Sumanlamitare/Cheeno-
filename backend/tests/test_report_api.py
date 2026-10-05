@@ -120,3 +120,13 @@ def test_plain_language_explanation():
     assert "spouse" not in edu  # education summary uses education-focused rules
     assert e["period"]["text"].startswith("You are now in the Moon Mahadasha")
     assert len(e["glossary"]) >= 15
+    # Personal meaning layer: second-person statements tied to rules.
+    assert len(e["glance"]) >= 4 and e["glance"][0].startswith("You ")
+    for a in e["areas"]:
+        assert a["verdict"] and a["meaning"], a["key"]
+        for m in a["meaning"]:
+            assert m["why"] and "{" not in m["text"]
+    career = e["areas"][1]
+    assert career["meaning"][0]["text"].startswith("Your career is strongly linked to income")  # 10th lord in 11th
+    assert all(g["forYou"] for g in e["grahas"])
+    assert e["period"]["upcoming"][0].startswith("From Aug 2027")
