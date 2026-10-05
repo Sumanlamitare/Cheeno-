@@ -32,6 +32,7 @@ from ..rules import (career, children, dasha as dasha_rules, doshas as dosha_rul
 from ..rules import yogas as yoga_rules
 from ..rules.engine import ChartContext
 from .explain import explain
+from ..rules.personal import personal_answers
 
 DISCLAIMER = ("Jyotish is a traditional astrological system. Its interpretations are cultural and spiritual "
               "frameworks and are not scientifically validated predictions. This reading should not replace "
@@ -157,6 +158,7 @@ def generate(b: BirthInput, now: dt.datetime | None = None,
         "d10": varga_rules.analyze_d10(ctx),
         "panchanga": panchanga_rules.explain(panchanga),
     }
+    interp["personal"] = personal_answers(ctx, interp)
 
     # ---- Assemble -------------------------------------------------------
     moon = chart.planets["Moon"]

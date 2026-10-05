@@ -121,12 +121,13 @@ class ChartContext:
 
     def is_weak(self, planet: str) -> bool:
         """Application convention: weak = debilitated, combust, or Shadbala
-        below the required minimum while not in own/exaltation sign."""
+        clearly below the required minimum (under 0.9x, so planets sitting at
+        the threshold are not labelled weak) while not in own/exaltation sign."""
         pl = self.chart.planets[planet]
         if pl.dignity == "debilitated" or pl.combust:
             return True
         r = self.shadbala_ratio(planet)
-        return r is not None and r < 1.0 and pl.dignity not in STRONG_DIGNITIES
+        return r is not None and r < 0.9 and pl.dignity not in STRONG_DIGNITIES
 
     def yoga_ids(self) -> set[str]:
         return {y.id for y in self.yogas}

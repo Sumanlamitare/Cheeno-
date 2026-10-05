@@ -130,3 +130,17 @@ def test_plain_language_explanation():
     assert career["meaning"][0]["text"].startswith("Your career is strongly linked to income")  # 10th lord in 11th
     assert all(g["forYou"] for g in e["grahas"])
     assert e["period"]["upcoming"][0].startswith("From Aug 2027")
+
+
+def test_personal_answers():
+    r = generate(BirthInput(date="2000-10-05", calendar="AD", time="10:30", place_id=ktm()), now=NOW)
+    p = r["interpretation"]["personal"]
+    keys = [a["key"] for a in p["answers"]]
+    assert keys == ["education", "wealth", "marriage", "career", "children"]
+    for a in p["answers"]:
+        assert a["answer"] and a["level"] and a["details"]
+        assert a["score"] == sum(f["points"] for f in a["factors"]) or a["key"] == "marriage"
+    children = p["answers"][4]
+    assert "does not predict the number or sex" in children["details"][0]
+    career = p["answers"][3]
+    assert career["level"] in ("Top of field", "Senior leadership", "Established professional", "Steady rise")

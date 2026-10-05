@@ -4,6 +4,7 @@ import type { Report } from "../types";
 import { Section, ReadingView } from "./common";
 import { DashaTable, LifeTimeline } from "./Dasha";
 import Explained from "./Explained";
+import Personal from "./Personal";
 import Houses from "./Houses";
 import KundaliChart from "./KundaliChart";
 import PlanetTable, { ShadbalaTable } from "./Planets";
@@ -24,6 +25,7 @@ const NAV: [string, string][] = [
 
 export default function Results({ report, onNew }: { report: Report; onNew: () => void }) {
   const [active, setActive] = useState("explained");
+  const [tab, setTab] = useState<"personal" | "full">("personal");
   const s = report.summary;
   const b = report.birth;
   const i = report.interpretation;
@@ -95,6 +97,20 @@ export default function Results({ report, onNew }: { report: Report; onNew: () =
         ))}
       </section>
 
+      <div className="main-tabs no-print" role="tablist" aria-label="Report view">
+        <button type="button" role="tab" aria-selected={tab === "personal"} className={tab === "personal" ? "active" : ""}
+          onClick={() => { setTab("personal"); window.scrollTo({ top: 0 }); }}>Personal answers</button>
+        <button type="button" role="tab" aria-selected={tab === "full"} className={tab === "full" ? "active" : ""}
+          onClick={() => setTab("full")}>Full Kundali</button>
+      </div>
+
+      <div className={tab === "personal" ? "" : "tab-hidden"} role="tabpanel">
+        <Section id="personal" num="✦" title="Personal Answers" kicker="Your questions, answered directly from your chart.">
+          <Personal report={report} />
+        </Section>
+      </div>
+
+      <div className={tab === "full" ? "" : "tab-hidden"} role="tabpanel">
       <nav className="section-nav no-print" aria-label="Report sections">
         {NAV.map(([id, label]) => (
           <a key={id} href={`#${id}`} className={active === id ? "active" : ""}>{label}</a>
@@ -171,6 +187,7 @@ export default function Results({ report, onNew }: { report: Report; onNew: () =
         <Section id="calc" num={20} title="Calculation Details"><CalculationDetails report={report} /></Section>
 
         <p className="disclaimer">{report.disclaimer}</p>
+      </div>
       </div>
     </main>
   );

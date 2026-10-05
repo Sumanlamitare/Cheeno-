@@ -90,7 +90,7 @@ def _strength_word(report: dict, planet: str) -> str:
     pl = next(p for p in report["chart"]["planets"] if p["name"] == planet)
     if pl["dignity"] in ("exalted", "moolatrikona", "own") or (sb and sb["ratio"] >= 1.25):
         return "strong"
-    if pl["dignity"] == "debilitated" or pl["combust"] or (sb and sb["ratio"] < 1.0):
+    if pl["dignity"] == "debilitated" or pl["combust"] or (sb and sb["ratio"] < 0.9):
         return "needs support"
     return "steady"
 
