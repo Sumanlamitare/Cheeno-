@@ -155,6 +155,9 @@ docker build -t janma-kundali .
 docker run -p 8000:8000 janma-kundali
 ```
 
+* **Vercel**: import the repository at vercel.com/new and keep the defaults. `vercel.json` builds the React app
+  into static files and serves the API as one Python serverless function (`api/index.py`, dependencies from the
+  root `requirements.txt`, about 130 MB). No environment variables are required.
 * **Render**: *New → Blueprint* and pick this repository (`render.yaml` is included).
 * **Railway / Fly.io / Google Cloud Run / any container host**: deploy the Dockerfile. The app listens on
   `$PORT` (default 8000). `WEB_CONCURRENCY` sets the number of worker processes (default 2).
@@ -176,7 +179,7 @@ project is therefore licensed under the **GNU AGPL-3.0** (see `LICENSE`). If you
 public web service, you must offer its source code to users. For a closed-source product, buy the Swiss Ephemeris
 professional licence from Astrodienst first.
 
-Place data © GeoNames (CC BY 4.0). Timezone data: IANA tz database.
+Place data © GeoNames (CC BY 4.0), stored as a compact extract (`backend/kundali/inputs/data/cities.json.gz`, regenerate with `backend/scripts/build_places.py`). Timezone data: IANA tz database.
 
 ## Disclaimer
 

@@ -2,8 +2,9 @@
 
 Sources
 -------
-* GeoNames "cities15000" data shipped with the `geonamescache` package
-  (~34,000 cities worldwide with coordinates and IANA timezone).
+* GeoNames "cities15000" data (~34,000 cities worldwide with coordinates and
+  IANA timezone), stored as a compact extract in data/cities.json.gz
+  (regenerate with scripts/build_places.py).
 * A supplementary list of Nepal district headquarters and towns that are below
   the GeoNames population threshold (approximate town-centre coordinates).
 * `timezonefinder` for resolving the IANA timezone of manually entered
@@ -14,12 +15,14 @@ No network calls are made at runtime.
 
 from __future__ import annotations
 
+import gzip
+import json
 import math
+import os
 import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
 
-import geonamescache
 from timezonefinder import TimezoneFinder
 
 
@@ -86,10 +89,6 @@ def _norm(text: str) -> str:
     return " ".join(stripped.lower().replace("-", " ").replace("'", "").split())
 
 
-def _is_latin(text: str) -> bool:
-    return all(ord(c) < 0x250 for c in text)
-
-
 @dataclass(frozen=True)
 class Place:
     id: str
@@ -139,37 +138,34 @@ def _haversine_km(a_lat, a_lon, b_lat, b_lon) -> float:
 
 class PlaceIndex:
     def __init__(self) -> None:
-        gc = geonamescache.GeonamesCache()
-        countries = gc.get_countries()
-        us_states = {code: s["name"] for code, s in gc.get_us_states().items()}
-        self.country_names = {cc: c["name"] for cc, c in countries.items()}
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "cities.json.gz")
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            data = json.load(f)
+        us_states = data["usStates"]
+        self.country_names = data["countries"]
         self.places: dict[str, Place] = {}
         self._tokens: dict[str, list[tuple[str, str]]] = {}
 
-        for city in gc.get_cities().values():
-            cc = city["countrycode"]
-            region = us_states.get(city.get("admin1code", "")) if cc == "US" else None
-            name = city["name"]
+        for gid, raw_name, cc, admin1, lat, lon, tz, pop, alts in data["cities"]:
+            region = us_states.get(admin1) if cc == "US" else None
+            name = raw_name
             if cc == "NP":
                 # GeoNames uses IAST-like diacritics for Nepal; show plain names.
                 name = unicodedata.normalize("NFKD", name)
                 name = "".join(c for c in name if not unicodedata.combining(c))
             place = Place(
-                id=f"gn-{city['geonameid']}",
+                id=f"gn-{gid}",
                 name=name,
                 country=self.country_names.get(cc, cc),
                 country_code=cc,
                 region=region,
-                latitude=float(city["latitude"]),
-                longitude=float(city["longitude"]),
-                timezone=city["timezone"],
-                population=int(city.get("population") or 0),
+                latitude=float(lat),
+                longitude=float(lon),
+                timezone=tz,
+                population=int(pop),
                 source="GeoNames",
             )
-            variants = {_norm(city["name"])}
-            for alt in city.get("alternatenames") or []:
-                if alt and _is_latin(alt) and len(alt) <= 40:
-                    variants.add(_norm(alt))
+            variants = {_norm(raw_name)} | {_norm(a) for a in alts}
             self._add(place, variants)
 
         nepal_existing = [p for p in self.places.values() if p.country_code == "NP"]

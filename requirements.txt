@@ -1,0 +1,8 @@
+# Python dependencies for the Vercel serverless function (api/index.py).
+# The Docker image uses backend/requirements.txt instead.
+fastapi==0.142.2
+pyswisseph==2.10.3.2
+nepali-datetime==1.0.8.5
+timezonefinder==9.0.0
+tzdata==2026.5
+pydantic==2.13.5
