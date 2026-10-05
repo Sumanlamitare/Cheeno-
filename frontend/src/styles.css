@@ -146,8 +146,8 @@ button.secondary { background: transparent; color: var(--maroon); }
 .qs-item { background: var(--paper); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
 .qs-item strong { font-family: var(--serif); font-size: 1.3rem; color: var(--maroon); line-height: 1.1; }
 .qs-item:last-child:nth-child(odd) { grid-column: span 2; }
-@media (min-width: 640px) { .quick-summary { grid-template-columns: repeat(4, 1fr); } .qs-item:last-child:nth-child(odd) { grid-column: span 1; } }
-@media (min-width: 1000px) { .quick-summary { grid-template-columns: repeat(7, 1fr); } }
+@media (min-width: 640px) { .quick-summary { grid-template-columns: repeat(4, 1fr); } }
+@media screen and (min-width: 1000px) { .quick-summary { grid-template-columns: repeat(7, 1fr); } .qs-item:last-child:nth-child(odd) { grid-column: span 1; } }
 .section-nav { position: sticky; top: 0; z-index: 30; display: flex; gap: 4px; overflow-x: auto; padding: 8px 0; margin: 0 -16px; padding-left: 16px; padding-right: 16px; background: rgba(244, 234, 213, 0.96); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); scrollbar-width: thin; }
 .section-nav a { flex: none; text-decoration: none; color: var(--ink-2); font-size: 0.88rem; padding: 6px 10px; border-radius: 999px; white-space: nowrap; }
 .section-nav a.active { background: var(--maroon); color: #fbf1dc; }
@@ -380,13 +380,12 @@ button.secondary { background: transparent; color: var(--maroon); }
   .results { max-width: none; padding: 0; }
   .report-section { break-inside: auto; padding-top: 14px; }
   .section-head, .kundali-figure, .group, .item, .yoga-card, .dosha-card, .stat, .theme-card, .panchanga-card { break-inside: avoid; }
-  #d1, #d9, #d10, #dasha { break-before: page; }
+  #planets, #d9, #d10, #dasha { break-before: page; }
   .kundali-figure { max-width: 115mm; margin: 0 auto; }
   .kundali-svg { box-shadow: none; }
   .group, .item, .overall, .card, .stat { box-shadow: none; }
   .why summary::before { content: ""; }
   .why summary { color: var(--charcoal); }
   .site-footer { background: none; color: var(--charcoal); border-top: 1px solid var(--line); }
-  .quick-summary { grid-template-columns: repeat(4, 1fr); }
   a { text-decoration: none; color: inherit; }
 }

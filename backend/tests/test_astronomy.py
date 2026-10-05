@@ -100,3 +100,25 @@ def test_sunrise_kathmandu():
     t = eph.jd_to_datetime(jd)
     assert t.date().isoformat() == "2024-06-20"
     assert 23 * 60 + 5 <= t.hour * 60 + t.minute <= 23 * 60 + 35
+
+
+def test_ascendant_matches_spherical_formula(settings):
+    """Independent check of the Lagna: tropical ascendant from apparent sidereal
+    time and true obliquity (standard spherical astronomy formula), minus the
+    Lahiri ayanamsha, must equal the engine's sidereal ascendant."""
+    import math
+    import random
+
+    rng = random.Random(3)
+    for _ in range(60):
+        jd = 2415020.5 + rng.uniform(0, 45000)
+        lat = rng.uniform(-60, 60)
+        lon = rng.uniform(-180, 180)
+        ramc = (swe.sidtime(jd) * 15 + lon) % 360
+        eps = swe.calc_ut(jd, swe.ECL_NUT)[0][0]
+        r, e, f = math.radians(ramc), math.radians(eps), math.radians(lat)
+        asc_trop = math.degrees(math.atan2(math.cos(r), -(math.sin(r) * math.cos(e) + math.tan(f) * math.sin(e)))) % 360
+        expected = (asc_trop - eph.ayanamsha(jd, settings)) % 360
+        got = eph.angles(jd, lat, lon, settings)["ascendant"]
+        diff = (got - expected + 180) % 360 - 180
+        assert abs(diff) < 0.01, (jd, lat, lon, got, expected)

@@ -60,7 +60,7 @@ backend/
     config.py    calculation settings (ayanamsha, nodes, dasha year) and weights
   app/main.py    FastAPI: /api/places, /api/convert-date, /api/kundali, static frontend
   ephe/          Swiss Ephemeris data files (1800–2400 AD)
-  tests/         362 automated tests
+  tests/         363 automated tests
 frontend/        Layer 5: React + TypeScript (Vite)
 ```
 
