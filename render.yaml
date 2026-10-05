@@ -1,0 +1,11 @@
+# Render.com Blueprint: New > Blueprint > select this repository.
+services:
+  - type: web
+    name: janma-kundali
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: WEB_CONCURRENCY
+        value: "2"

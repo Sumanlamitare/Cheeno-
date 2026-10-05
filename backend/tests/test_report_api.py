@@ -37,6 +37,8 @@ def test_report_structure():
                 "calculation", "disclaimer"):
         assert key in r
     assert len(r["chart"]["planets"]) == 9
+    assert r["calculation"]["ephemeris"] == "Swiss Ephemeris"
+    assert not any("Moshier" in w for w in r["warnings"])
     assert r["calculation"]["ayanamsha"] == "Lahiri / Chitrapaksha"
     assert r["calculation"]["houseSystem"] == "Whole Sign"
     assert r["summary"]["currentMahadasha"] == "Moon"
@@ -89,3 +91,18 @@ def test_no_ai_dependencies():
         if "node_modules" in path.parts or path.name == "test_report_api.py":
             continue
         assert not pattern.search(path.read_text(errors="ignore")), path
+
+
+def test_swiss_ephemeris_used_in_worker_threads():
+    # API requests run in worker threads; the ephemeris path must be set there too.
+    import threading
+    out = {}
+
+    def work():
+        r = generate(BirthInput(date="2000-10-05", calendar="AD", time="10:30", place_id=ktm()), now=NOW)
+        out["eph"] = r["calculation"]["ephemeris"]
+
+    t = threading.Thread(target=work)
+    t.start()
+    t.join()
+    assert out["eph"] == "Swiss Ephemeris"

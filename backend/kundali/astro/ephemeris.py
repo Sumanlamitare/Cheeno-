@@ -50,7 +50,18 @@ AYANAMSHA_LABELS = {
 MIN_YEAR = 1800
 MAX_YEAR = 2399
 
-swe.set_ephe_path(EPHE_PATH)
+# The Swiss Ephemeris keeps its configuration in thread-local storage, so the
+# data path must be set in every thread that calculates (API worker threads).
+_thread_state = threading.local()
+
+
+def _ensure_path() -> None:
+    if getattr(_thread_state, "path", None) != EPHE_PATH:
+        swe.set_ephe_path(EPHE_PATH)
+        _thread_state.path = EPHE_PATH
+
+
+_ensure_path()
 
 
 class EphemerisError(RuntimeError):
@@ -85,6 +96,7 @@ def jd_to_datetime(jd: float) -> dt.datetime:
 
 
 def _configure(settings: CalculationSettings) -> None:
+    _ensure_path()
     swe.set_sid_mode(AYANAMSHA_MODES[settings.ayanamsha], 0, 0)
 
 
@@ -112,7 +124,9 @@ def body_position(jd: float, name: str, settings: CalculationSettings) -> BodyPo
             xx, ret = swe.calc_ut(jd, _BODY[name], _flags())
             eq, _ = swe.calc_ut(jd, _BODY[name], _flags() | swe.FLG_EQUATORIAL)
             lon, lat, speed, dec = xx[0], xx[1], xx[3], eq[1]
-        source = "Swiss Ephemeris" if ret & swe.FLG_SWIEPH else "Moshier"
+        # Lunar nodes (mean node) are computed analytically and do not set the
+        # file flag; only planets indicate whether the data files were used.
+        source = "Swiss Ephemeris" if (ret & swe.FLG_SWIEPH or name in ("Rahu", "Ketu")) else "Moshier"
         return BodyPosition(name, lon % 360.0, lat, speed, dec, source)
 
 
@@ -133,6 +147,7 @@ def sun_rise_set(jd_start: float, lat: float, lon: float, rise: bool) -> float |
     without refraction). Returns None at polar latitudes when there is none."""
     flag = (swe.CALC_RISE if rise else swe.CALC_SET) | swe.BIT_HINDU_RISING
     with LOCK:
+        _ensure_path()
         try:
             res, tret = swe.rise_trans(jd_start, swe.SUN, flag, (lon, lat, 0.0), 0.0, 0.0, swe.FLG_SWIEPH)
         except swe.Error:
@@ -145,6 +160,7 @@ def sun_rise_set(jd_start: float, lat: float, lon: float, rise: bool) -> float |
 def equation_of_time(jd: float) -> float:
     """Equation of time in days (apparent - mean solar time)."""
     with LOCK:
+        _ensure_path()
         return swe.time_equ(jd)
 
 
