@@ -31,6 +31,7 @@ from ..rules import (career, children, dasha as dasha_rules, doshas as dosha_rul
                      transits, travel, vargas as varga_rules, wealth)
 from ..rules import yogas as yoga_rules
 from ..rules.engine import ChartContext
+from .explain import explain
 
 DISCLAIMER = ("Jyotish is a traditional astrological system. Its interpretations are cultural and spiritual "
               "frameworks and are not scientifically validated predictions. This reading should not replace "
@@ -260,4 +261,6 @@ def generate(b: BirthInput, now: dt.datetime | None = None,
         "warnings": warnings,
         "disclaimer": DISCLAIMER,
     }
-    return _iso(report)
+    out = _iso(report)
+    out["explained"] = _iso(explain(out))
+    return out

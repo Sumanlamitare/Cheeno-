@@ -7,7 +7,8 @@ import datetime as dt
 
 from ..jyotish.constants import RASHIS, ordinal
 from .engine import ChartContext, rule, run_rules, synthesize
-from .library import bhavesha_rules, planet_house_rules, significator_set, timing_windows, yoga_rule
+from .data.domain_lords import EDU_L4, EDU_L5, EDU_L9
+from .library import domain_lord_rules, planet_house_rules, significator_set, timing_windows, yoga_rule
 
 C = "education"
 THEMES = {
@@ -32,10 +33,10 @@ def _t(y, pol):
 
 
 def build_rules():
-    rules = bhavesha_rules(5, C, _t, "major")
-    rules += bhavesha_rules(4, C, _t, "moderate", prefix="education_4")
-    rules += bhavesha_rules(9, C, lambda y, pol: "education.obstacles" if pol == "negative" else "education.higher",
-                            "moderate", prefix="education_9")
+    rules = domain_lord_rules(5, EDU_L5, C, _t, "major")
+    rules += domain_lord_rules(4, EDU_L4, C, _t, "moderate", prefix="education_4")
+    rules += domain_lord_rules(9, EDU_L9, C, lambda y, pol: "education.obstacles" if pol == "negative" else "education.higher",
+                               "moderate", prefix="education_9")
     rules += planet_house_rules(5, C, lambda p, pol: "education.obstacles" if pol == "negative" else "education.intellect",
                                 "strong")
     rules += planet_house_rules(4, C, lambda p, pol: "education.obstacles" if pol == "negative" else "education.foundation",

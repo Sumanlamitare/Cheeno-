@@ -106,3 +106,17 @@ def test_swiss_ephemeris_used_in_worker_threads():
     t.start()
     t.join()
     assert out["eph"] == "Swiss Ephemeris"
+
+
+def test_plain_language_explanation():
+    r = generate(BirthInput(date="2000-10-05", calendar="AD", time="10:30", place_id=ktm()), now=NOW)
+    e = r["explained"]
+    assert len(e["grahas"]) == 9 and len(e["core"]) == 4
+    assert [a["key"] for a in e["areas"]][:3] == ["education", "career", "wealth"]
+    for a in e["areas"]:
+        for p in a["points"]:
+            assert p["why"] and "{" not in p["text"]
+    edu = " ".join(p["text"] for p in e["areas"][0]["points"])
+    assert "spouse" not in edu  # education summary uses education-focused rules
+    assert e["period"]["text"].startswith("You are now in the Moon Mahadasha")
+    assert len(e["glossary"]) >= 15

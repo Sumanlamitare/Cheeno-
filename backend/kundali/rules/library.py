@@ -28,6 +28,21 @@ def bhavesha_rules(house: int, category: str, theme_for, tier: str = "major", pr
     return out
 
 
+def domain_lord_rules(house: int, table: dict, category: str, theme_for, tier: str = "major",
+                      prefix: str | None = None) -> list[Rule]:
+    """Like bhavesha_rules, but with texts restated for one life area."""
+    out = []
+    for y in range(1, 13):
+        pol, text = table[y]
+        out.append(rule(
+            f"{prefix or category}_L{house}_in_{y}", category, theme_for(y, pol), tier, pol,
+            [{"t": "in_house", "p": f"L{house}", "h": y}], text,
+            f"{ordinal(house)} lord in {ordinal(y)} house", subject=f"L{house}",
+            explanation=f"Bhavesha Phala (BPHS ch. 24), read for {category}",
+        ))
+    return out
+
+
 def planet_house_rules(house: int, category: str, theme_for, tier: str = "strong",
                        planets=PLANETS, prefix: str | None = None) -> list[Rule]:
     out = []

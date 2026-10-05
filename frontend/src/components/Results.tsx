@@ -3,6 +3,7 @@ import { fmtLatLon } from "../format";
 import type { Report } from "../types";
 import { Section, ReadingView } from "./common";
 import { DashaTable, LifeTimeline } from "./Dasha";
+import Explained from "./Explained";
 import Houses from "./Houses";
 import KundaliChart from "./KundaliChart";
 import PlanetTable, { ShadbalaTable } from "./Planets";
@@ -14,7 +15,7 @@ import { Gochar, SadeSati } from "./Transits";
 import { AdvancedVargas, VargaSection } from "./Vargas";
 
 const NAV: [string, string][] = [
-  ["d1", "Rashi Chart"], ["planets", "Planets"], ["lagna", "Lagna"], ["moon", "Rashi & Nakshatra"], ["houses", "Houses"],
+  ["explained", "Explained"], ["d1", "Rashi Chart"], ["planets", "Planets"], ["lagna", "Lagna"], ["moon", "Rashi & Nakshatra"], ["houses", "Houses"],
   ["career", "Career"], ["wealth", "Wealth"], ["education", "Education"], ["marriage", "Marriage"], ["family", "Family"],
   ["travel", "Travel"], ["children", "Children"], ["health", "Health"], ["yogas", "Yogas"], ["doshas", "Doshas"],
   ["dasha", "Dasha"], ["gochar", "Gochar"], ["sadesati", "Sade Sati"], ["d9", "Navamsa"], ["d10", "Dashamsha"],
@@ -22,7 +23,7 @@ const NAV: [string, string][] = [
 ];
 
 export default function Results({ report, onNew }: { report: Report; onNew: () => void }) {
-  const [active, setActive] = useState("d1");
+  const [active, setActive] = useState("explained");
   const s = report.summary;
   const b = report.birth;
   const i = report.interpretation;
@@ -101,6 +102,10 @@ export default function Results({ report, onNew }: { report: Report; onNew: () =
       </nav>
 
       <div className="report-body">
+        <Section id="explained" num="★" title="Your Kundali Explained" kicker="A plain-language walkthrough. The detailed classical sections follow below.">
+          <Explained report={report} />
+        </Section>
+
         <Section id="d1" num={1} title="Rashi Chart (D1)" kicker="Janma Kundali in the North Indian style">
           <div className="chart-centre">
             <KundaliChart lagnaSign={report.chart.ascendant.sign} entries={d1Entries} title="Rashi · D1"

@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from ..jyotish.constants import RASHIS, ordinal
 from .engine import ChartContext, rule, run_rules, synthesize
-from .library import bhavesha_rules, planet_house_rules
+from .data.domain_lords import CHILD_L5
+from .library import domain_lord_rules, planet_house_rules
 
 C = "children"
 THEMES = {
@@ -17,7 +18,7 @@ THEMES = {
 
 def build_rules():
     t = lambda y, pol: "children.patience" if pol == "negative" else "children.blessing"
-    rules = bhavesha_rules(5, C, t, "major")
+    rules = domain_lord_rules(5, CHILD_L5, C, t, "major")
     rules += planet_house_rules(5, C, lambda p, pol: "children.patience" if pol == "negative" else "children.blessing",
                                 "strong")
     rules += [
